@@ -1,0 +1,310 @@
+2023-02-05 23:10:17,350 - mmcls - INFO - Environment info:
+------------------------------------------------------------
+sys.platform: linux
+Python: 3.8.16 (default, Jan 17 2023, 23:13:24) [GCC 11.2.0]
+CUDA available: True
+GPU 0,1,2,3,4,5,6,7: NVIDIA TITAN Xp
+CUDA_HOME: /data/cuda/cuda-10.0/cuda
+NVCC: Cuda compilation tools, release 10.0, V10.0.13
+GCC: gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0
+PyTorch: 1.10.0
+PyTorch compiling details: PyTorch built with:
+  - GCC 7.3
+  - C++ Version: 201402
+  - Intel(R) oneAPI Math Kernel Library Version 2021.4-Product Build 20210904 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v2.2.3 (Git Hash 7336ca9f055cf1bfa13efb658fe15dc9b41f0740)
+  - OpenMP 201511 (a.k.a. OpenMP 4.5)
+  - LAPACK is enabled (usually provided by MKL)
+  - NNPACK is enabled
+  - CPU capability usage: AVX2
+  - CUDA Runtime 11.3
+  - NVCC architecture flags: -gencode;arch=compute_37,code=sm_37;-gencode;arch=compute_50,code=sm_50;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_61,code=sm_61;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86;-gencode;arch=compute_37,code=compute_37
+  - CuDNN 8.2
+  - Magma 2.5.2
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.3, CUDNN_VERSION=8.2.0, CXX_COMPILER=/opt/rh/devtoolset-7/root/usr/bin/c++, CXX_FLAGS= -Wno-deprecated -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -fopenmp -DNDEBUG -DUSE_KINETO -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -DEDGE_PROFILER_USE_KINETO -O2 -fPIC -Wno-narrowing -Wall -Wextra -Werror=return-type -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-result -Wno-unused-local-typedefs -Wno-strict-overflow -Wno-strict-aliasing -Wno-error=deprecated-declarations -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=redundant-decls -Wno-error=old-style-cast -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Wno-stringop-overflow, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_VERSION=1.10.0, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=OFF, USE_NCCL=ON, USE_NNPACK=ON, USE_OPENMP=ON, 
+
+TorchVision: 0.11.0
+OpenCV: 4.7.0
+MMCV: 1.7.1
+MMCV Compiler: GCC 9.3
+MMCV CUDA Compiler: 11.3
+MMClassification: 0.25.0+3d4f80d
+------------------------------------------------------------
+
+2023-02-05 23:10:17,351 - mmcls - INFO - Distributed training: True
+2023-02-05 23:10:17,602 - mmcls - INFO - Config:
+model = dict(
+    type='ImageClassifier',
+    backbone=dict(type='MobileNetV3', arch='large'),
+    neck=dict(type='GlobalAveragePooling'),
+    head=dict(
+        type='StackedLinearClsHead',
+        num_classes=5,
+        in_channels=960,
+        mid_channels=[1280],
+        dropout_rate=0.2,
+        act_cfg=dict(type='HSwish'),
+        loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+        init_cfg=dict(
+            type='Normal', layer='Linear', mean=0.0, std=0.01, bias=0.0),
+        topk=(1, )))
+dataset_type = 'CustomDataset'
+img_norm_cfg = dict(
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='RandomResizedCrop', size=224, backend='pillow'),
+    dict(type='RandomFlip', flip_prob=0.5, direction='horizontal'),
+    dict(
+        type='Normalize',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        to_rgb=True),
+    dict(type='ImageToTensor', keys=['img']),
+    dict(type='ToTensor', keys=['gt_label']),
+    dict(type='Collect', keys=['img', 'gt_label'])
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='Resize', size=(256, -1), backend='pillow'),
+    dict(type='CenterCrop', crop_size=224),
+    dict(
+        type='Normalize',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        to_rgb=True),
+    dict(type='ImageToTensor', keys=['img']),
+    dict(type='Collect', keys=['img'])
+]
+data = dict(
+    samples_per_gpu=32,
+    workers_per_gpu=2,
+    train=dict(
+        type='CustomDataset',
+        data_prefix='data/flower_dataset/train',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='RandomResizedCrop', size=224, backend='pillow'),
+            dict(type='RandomFlip', flip_prob=0.5, direction='horizontal'),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='ToTensor', keys=['gt_label']),
+            dict(type='Collect', keys=['img', 'gt_label'])
+        ]),
+    val=dict(
+        type='CustomDataset',
+        data_prefix='data/flower_dataset/val',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='Resize', size=(256, -1), backend='pillow'),
+            dict(type='CenterCrop', crop_size=224),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', keys=['img'])
+        ]),
+    test=dict(
+        type='CustomDataset',
+        data_prefix='data/flower_dataset/val',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='Resize', size=(256, -1), backend='pillow'),
+            dict(type='CenterCrop', crop_size=224),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', keys=['img'])
+        ]))
+evaluation = dict(
+    interval=1, metric='accuracy', metric_options=dict(topk=(1, )))
+checkpoint_config = dict(interval=1)
+log_config = dict(
+    interval=100,
+    hooks=[dict(type='TextLoggerHook'),
+           dict(type='TensorboardLoggerHook')])
+dist_params = dict(backend='nccl')
+log_level = 'INFO'
+load_from = './checkpoints/mobilenet_v3_large-3ea3c186.pth'
+resume_from = None
+workflow = [('train', 1)]
+optimizer = dict(type='SGD', lr=0.001, momentum=0.9, weight_decay=4e-05)
+optimizer_config = dict(grad_clip=None)
+lr_config = dict(policy='step', step=2, gamma=0.973, by_epoch=True)
+runner = dict(type='EpochBasedRunner', max_epochs=50)
+work_dir = './work_dirs/mobilenet-v3-large_8xb32_flower'
+gpu_ids = range(0, 8)
+
+2023-02-05 23:10:24,569 - mmcls - INFO - Set random seed to 1741079689, deterministic: False
+2023-02-05 23:10:25,222 - mmcls - INFO - load checkpoint from local path: ./checkpoints/mobilenet_v3_large-3ea3c186.pth
+2023-02-05 23:10:25,343 - mmcls - WARNING - The model and loaded state dict do not match exactly
+
+size mismatch for head.layers.1.fc.weight: copying a param with shape torch.Size([1000, 1280]) from checkpoint, the shape in current model is torch.Size([5, 1280]).
+size mismatch for head.layers.1.fc.bias: copying a param with shape torch.Size([1000]) from checkpoint, the shape in current model is torch.Size([5]).
+2023-02-05 23:10:25,343 - mmcls - INFO - Start running, host: wuwenbin@wwb-work-z6h2k-34305-worker-0, work_dir: /data/learning/mmclassification/work_dirs/mobilenet-v3-large_8xb32_flower
+2023-02-05 23:10:25,343 - mmcls - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) StepLrUpdaterHook                  
+(NORMAL      ) CheckpointHook                     
+(LOW         ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) StepLrUpdaterHook                  
+(NORMAL      ) DistSamplerSeedHook                
+(LOW         ) IterTimerHook                      
+(LOW         ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) StepLrUpdaterHook                  
+(LOW         ) IterTimerHook                      
+(LOW         ) DistEvalHook                       
+ -------------------- 
+after_train_iter:
+(ABOVE_NORMAL) DistOptimizerHook                  
+(NORMAL      ) CheckpointHook                     
+(LOW         ) IterTimerHook                      
+(LOW         ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) CheckpointHook                     
+(LOW         ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+before_val_epoch:
+(NORMAL      ) DistSamplerSeedHook                
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+before_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_epoch:
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+after_run:
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+2023-02-05 23:10:25,343 - mmcls - INFO - workflow: [('train', 1)], max: 50 epochs
+2023-02-05 23:10:25,344 - mmcls - INFO - Checkpoints will be saved to /data/learning/mmclassification/work_dirs/mobilenet-v3-large_8xb32_flower by HardDiskBackend.
+2023-02-05 23:10:31,540 - mmcls - INFO - Saving checkpoint at 1 epochs
+2023-02-05 23:10:35,178 - mmcls - INFO - Epoch(val) [1][6]	accuracy_top-1: 37.0665
+2023-02-05 23:10:40,056 - mmcls - INFO - Saving checkpoint at 2 epochs
+2023-02-05 23:10:43,154 - mmcls - INFO - Epoch(val) [2][6]	accuracy_top-1: 67.8468
+2023-02-05 23:10:47,630 - mmcls - INFO - Saving checkpoint at 3 epochs
+2023-02-05 23:10:50,704 - mmcls - INFO - Epoch(val) [3][6]	accuracy_top-1: 77.6734
+2023-02-05 23:10:55,168 - mmcls - INFO - Saving checkpoint at 4 epochs
+2023-02-05 23:10:58,286 - mmcls - INFO - Epoch(val) [4][6]	accuracy_top-1: 83.4538
+2023-02-05 23:11:02,732 - mmcls - INFO - Saving checkpoint at 5 epochs
+2023-02-05 23:11:05,915 - mmcls - INFO - Epoch(val) [5][6]	accuracy_top-1: 86.1994
+2023-02-05 23:11:10,330 - mmcls - INFO - Saving checkpoint at 6 epochs
+2023-02-05 23:11:13,398 - mmcls - INFO - Epoch(val) [6][6]	accuracy_top-1: 88.7283
+2023-02-05 23:11:17,915 - mmcls - INFO - Saving checkpoint at 7 epochs
+2023-02-05 23:11:21,060 - mmcls - INFO - Epoch(val) [7][6]	accuracy_top-1: 90.1734
+2023-02-05 23:11:25,451 - mmcls - INFO - Saving checkpoint at 8 epochs
+2023-02-05 23:11:28,681 - mmcls - INFO - Epoch(val) [8][6]	accuracy_top-1: 91.5462
+2023-02-05 23:11:33,276 - mmcls - INFO - Saving checkpoint at 9 epochs
+2023-02-05 23:11:36,403 - mmcls - INFO - Epoch(val) [9][6]	accuracy_top-1: 91.9798
+2023-02-05 23:11:40,875 - mmcls - INFO - Saving checkpoint at 10 epochs
+2023-02-05 23:11:43,947 - mmcls - INFO - Epoch(val) [10][6]	accuracy_top-1: 92.4133
+2023-02-05 23:11:48,350 - mmcls - INFO - Saving checkpoint at 11 epochs
+2023-02-05 23:11:51,435 - mmcls - INFO - Epoch(val) [11][6]	accuracy_top-1: 92.9913
+2023-02-05 23:11:56,019 - mmcls - INFO - Saving checkpoint at 12 epochs
+2023-02-05 23:11:59,131 - mmcls - INFO - Epoch(val) [12][6]	accuracy_top-1: 93.2803
+2023-02-05 23:12:03,504 - mmcls - INFO - Saving checkpoint at 13 epochs
+2023-02-05 23:12:06,592 - mmcls - INFO - Epoch(val) [13][6]	accuracy_top-1: 93.7861
+2023-02-05 23:12:11,142 - mmcls - INFO - Saving checkpoint at 14 epochs
+2023-02-05 23:12:14,272 - mmcls - INFO - Epoch(val) [14][6]	accuracy_top-1: 93.9306
+2023-02-05 23:12:18,786 - mmcls - INFO - Saving checkpoint at 15 epochs
+2023-02-05 23:12:21,876 - mmcls - INFO - Epoch(val) [15][6]	accuracy_top-1: 94.1474
+2023-02-05 23:12:26,368 - mmcls - INFO - Saving checkpoint at 16 epochs
+2023-02-05 23:12:29,507 - mmcls - INFO - Epoch(val) [16][6]	accuracy_top-1: 94.4364
+2023-02-05 23:12:33,885 - mmcls - INFO - Saving checkpoint at 17 epochs
+2023-02-05 23:12:36,965 - mmcls - INFO - Epoch(val) [17][6]	accuracy_top-1: 94.7977
+2023-02-05 23:12:41,375 - mmcls - INFO - Saving checkpoint at 18 epochs
+2023-02-05 23:12:44,406 - mmcls - INFO - Epoch(val) [18][6]	accuracy_top-1: 94.8699
+2023-02-05 23:12:48,910 - mmcls - INFO - Saving checkpoint at 19 epochs
+2023-02-05 23:12:52,023 - mmcls - INFO - Epoch(val) [19][6]	accuracy_top-1: 95.1590
+2023-02-05 23:12:56,441 - mmcls - INFO - Saving checkpoint at 20 epochs
+2023-02-05 23:12:59,536 - mmcls - INFO - Epoch(val) [20][6]	accuracy_top-1: 95.2312
+2023-02-05 23:13:03,907 - mmcls - INFO - Saving checkpoint at 21 epochs
+2023-02-05 23:13:07,054 - mmcls - INFO - Epoch(val) [21][6]	accuracy_top-1: 95.3757
+2023-02-05 23:13:11,621 - mmcls - INFO - Saving checkpoint at 22 epochs
+2023-02-05 23:13:14,757 - mmcls - INFO - Epoch(val) [22][6]	accuracy_top-1: 95.5925
+2023-02-05 23:13:19,179 - mmcls - INFO - Saving checkpoint at 23 epochs
+2023-02-05 23:13:22,307 - mmcls - INFO - Epoch(val) [23][6]	accuracy_top-1: 95.5925
+2023-02-05 23:13:26,797 - mmcls - INFO - Saving checkpoint at 24 epochs
+2023-02-05 23:13:29,926 - mmcls - INFO - Epoch(val) [24][6]	accuracy_top-1: 95.6647
+2023-02-05 23:13:34,327 - mmcls - INFO - Saving checkpoint at 25 epochs
+2023-02-05 23:13:37,428 - mmcls - INFO - Epoch(val) [25][6]	accuracy_top-1: 95.6647
+2023-02-05 23:13:41,900 - mmcls - INFO - Saving checkpoint at 26 epochs
+2023-02-05 23:13:45,014 - mmcls - INFO - Epoch(val) [26][6]	accuracy_top-1: 95.4480
+2023-02-05 23:13:49,439 - mmcls - INFO - Saving checkpoint at 27 epochs
+2023-02-05 23:13:52,502 - mmcls - INFO - Epoch(val) [27][6]	accuracy_top-1: 95.7370
+2023-02-05 23:13:56,937 - mmcls - INFO - Saving checkpoint at 28 epochs
+2023-02-05 23:14:00,049 - mmcls - INFO - Epoch(val) [28][6]	accuracy_top-1: 95.8092
+2023-02-05 23:14:04,401 - mmcls - INFO - Saving checkpoint at 29 epochs
+2023-02-05 23:14:07,432 - mmcls - INFO - Epoch(val) [29][6]	accuracy_top-1: 96.0260
+2023-02-05 23:14:11,878 - mmcls - INFO - Saving checkpoint at 30 epochs
+2023-02-05 23:14:14,963 - mmcls - INFO - Epoch(val) [30][6]	accuracy_top-1: 96.0260
+2023-02-05 23:14:19,404 - mmcls - INFO - Saving checkpoint at 31 epochs
+2023-02-05 23:14:22,482 - mmcls - INFO - Epoch(val) [31][6]	accuracy_top-1: 96.0983
+2023-02-05 23:14:26,947 - mmcls - INFO - Saving checkpoint at 32 epochs
+2023-02-05 23:14:30,066 - mmcls - INFO - Epoch(val) [32][6]	accuracy_top-1: 96.0983
+2023-02-05 23:14:34,512 - mmcls - INFO - Saving checkpoint at 33 epochs
+2023-02-05 23:14:37,628 - mmcls - INFO - Epoch(val) [33][6]	accuracy_top-1: 96.2428
+2023-02-05 23:14:42,217 - mmcls - INFO - Saving checkpoint at 34 epochs
+2023-02-05 23:14:45,339 - mmcls - INFO - Epoch(val) [34][6]	accuracy_top-1: 96.3150
+2023-02-05 23:14:49,768 - mmcls - INFO - Saving checkpoint at 35 epochs
+2023-02-05 23:14:52,829 - mmcls - INFO - Epoch(val) [35][6]	accuracy_top-1: 96.3150
+2023-02-05 23:14:57,359 - mmcls - INFO - Saving checkpoint at 36 epochs
+2023-02-05 23:15:00,443 - mmcls - INFO - Epoch(val) [36][6]	accuracy_top-1: 96.5318
+2023-02-05 23:15:04,953 - mmcls - INFO - Saving checkpoint at 37 epochs
+2023-02-05 23:15:07,978 - mmcls - INFO - Epoch(val) [37][6]	accuracy_top-1: 96.4595
+2023-02-05 23:15:12,285 - mmcls - INFO - Saving checkpoint at 38 epochs
+2023-02-05 23:15:15,385 - mmcls - INFO - Epoch(val) [38][6]	accuracy_top-1: 96.5318
+2023-02-05 23:15:19,898 - mmcls - INFO - Saving checkpoint at 39 epochs
+2023-02-05 23:15:23,016 - mmcls - INFO - Epoch(val) [39][6]	accuracy_top-1: 96.6040
+2023-02-05 23:15:27,415 - mmcls - INFO - Saving checkpoint at 40 epochs
+2023-02-05 23:15:30,497 - mmcls - INFO - Epoch(val) [40][6]	accuracy_top-1: 96.6040
+2023-02-05 23:15:34,915 - mmcls - INFO - Saving checkpoint at 41 epochs
+2023-02-05 23:15:38,071 - mmcls - INFO - Epoch(val) [41][6]	accuracy_top-1: 96.5318
+2023-02-05 23:15:42,626 - mmcls - INFO - Saving checkpoint at 42 epochs
+2023-02-05 23:15:45,807 - mmcls - INFO - Epoch(val) [42][6]	accuracy_top-1: 96.6763
+2023-02-05 23:15:50,300 - mmcls - INFO - Saving checkpoint at 43 epochs
+2023-02-05 23:15:53,488 - mmcls - INFO - Epoch(val) [43][6]	accuracy_top-1: 96.8208
+2023-02-05 23:15:58,077 - mmcls - INFO - Saving checkpoint at 44 epochs
+2023-02-05 23:16:01,137 - mmcls - INFO - Epoch(val) [44][6]	accuracy_top-1: 96.6763
+2023-02-05 23:16:05,567 - mmcls - INFO - Saving checkpoint at 45 epochs
+2023-02-05 23:16:08,708 - mmcls - INFO - Epoch(val) [45][6]	accuracy_top-1: 96.6040
+2023-02-05 23:16:13,229 - mmcls - INFO - Saving checkpoint at 46 epochs
+2023-02-05 23:16:16,318 - mmcls - INFO - Epoch(val) [46][6]	accuracy_top-1: 96.6040
+2023-02-05 23:16:20,823 - mmcls - INFO - Saving checkpoint at 47 epochs
+2023-02-05 23:16:23,879 - mmcls - INFO - Epoch(val) [47][6]	accuracy_top-1: 96.8208
+2023-02-05 23:16:28,235 - mmcls - INFO - Saving checkpoint at 48 epochs
+2023-02-05 23:16:31,373 - mmcls - INFO - Epoch(val) [48][6]	accuracy_top-1: 96.7486
+2023-02-05 23:16:35,884 - mmcls - INFO - Saving checkpoint at 49 epochs
+2023-02-05 23:16:38,990 - mmcls - INFO - Epoch(val) [49][6]	accuracy_top-1: 96.8208
+2023-02-05 23:16:43,360 - mmcls - INFO - Saving checkpoint at 50 epochs
+2023-02-05 23:16:46,423 - mmcls - INFO - Epoch(val) [50][6]	accuracy_top-1: 96.8208
